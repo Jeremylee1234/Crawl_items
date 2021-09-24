@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 from func_timeout import func_set_timeout
 from selenium.common.exceptions import TimeoutException
-from del_js import get_js_code
+from utils.del_js import get_js_code
 from selenium import webdriver
-from utils import Proxy
-from func_classes import Err_Retry
+from utils.utils import Proxy
+from utils.func_classes import Err_Retry
 import time
 import json
 
@@ -28,16 +28,22 @@ class Driver(Err_Retry):
         ua:使用什么平台的代理,'pc'或'mobile'
         css:是否禁用浏览器css
         """
-        prefs = {
-            "webrtc.ip_handling_policy": "disable_non_proxied_udp",
-            "webrtc.multiple_routes_enabled": False,
-            "webrtc.nonproxied_udp_enabled": False
-        }
-        if not css:
-            prefs['profile.default_content_setting_values'] = {
-                'images': 2,
-                'stylesheet': 2       #2即为禁用的意思
-            },
+        if css:
+            prefs = {
+                "webrtc.ip_handling_policy": "disable_non_proxied_udp",
+                "webrtc.multiple_routes_enabled": False,
+                "webrtc.nonproxied_udp_enabled": False
+            }
+        else:
+            prefs = {
+                'profile.default_content_setting_values': {
+                    'images': 2,
+                    'stylesheet': 2       #2即为禁用的意思
+                },
+                "webrtc.ip_handling_policy": "disable_non_proxied_udp",
+                "webrtc.multiple_routes_enabled": False,
+                "webrtc.nonproxied_udp_enabled": False
+            }
         if ua == 'pc':
             ua = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.64'
         elif ua == 'mobile':

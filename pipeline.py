@@ -1,7 +1,10 @@
 
-from item import Item
+from data_formate import Item
 from utils.logger import logger
 import alchemy as db
+
+def process_item(item:Item):
+	return item
 
 def upload_item(item:Item):
 	try:
@@ -10,7 +13,7 @@ def upload_item(item:Item):
 			url = item.url,
 			title = item.title,
 			phase = item.phase,
-			stage = item.stage,
+			status = item.status,
 			category = item.category,
 			repeat = item.repeat,
 			province = item.province,
@@ -21,19 +24,22 @@ def upload_item(item:Item):
 			current_price = item.current_price,
 			appraisal_price = item.appraisal_price,
 			max_price = item.max_price,
+			deal_price = item.deal_price,
 			margin = item.margin,
 			markup = item.markup,
 			shipping_fee = item.shipping_fee,
-			start_date = item.start_date,
-			end_date = item.end_date,
+			start_time = item.start_time,
+			end_time = item.end_time,
 			updated_time = item.updated_time,
+			crawled_time = item.crawled_time,
+			deal_time = item.deal_time,
 			people_signed = item.people_signed,
 			people_alarmed = item.people_alarmed,
 			people_viewed = item.people_viewed,
 			people_bid = item.people_bid,
 			location = item.location,
 			area = item.area,
-			intro = item.area,
+			intro = item.intro,
 			other_info = item.other_info,
 			attaches = item.attaches,
 			seller = item.seller,
@@ -45,17 +51,22 @@ def upload_item(item:Item):
 			phone = item.phone,
 			telephone = item.telephone,
 			auction_people = item.auction_people,
-			source = item.source,
+			lng = item.lng,
+			lat = item.lat,
 			uploaded = item.uploaded,
 			extra1 = item.extra1,
 			extra2 = item.extra2,
 			extra3 = item.extra3,
 			extra4 = item.extra4,
 			extra5 = item.extra5,
-			province_id = item.province_id,
-			city_id = item.city_id,
-			county_id = item.county_id,
-			category_id = item.category_id
+			siteID = item.siteId,
+			categoryId = item.categoryId,
+			provinceId = item.provinceId,
+			cityId = item.cityId,
+			countyId = item.countyId,
+			industryId_a = item.industryId_a,
+			industryId_b = item.industryId_b,
+			industryId_c = item.industryId_c
 		)
 		db.db_session.add(new_item)
 		db.db_session.commit()

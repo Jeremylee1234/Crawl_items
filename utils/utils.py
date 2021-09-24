@@ -1,13 +1,58 @@
 import re
 import time
 import json
+import random
 import datetime
 import requests
-from item import Item
+import pyautogui
 from retrying import retry
+from threading import Thread
+from data_formate import Item
 from lxml.etree import _Element
 from utils.config import global_config
 from utils.logger import logger
+
+## 额外功能函数
+def my_async(func):
+    """
+    使函数异步执行
+    """
+    def wrapper(*args, **kwargs):
+        thr = Thread(target=func, args=args, kwargs=kwargs)
+        thr.start()
+    return wrapper
+
+def random_gradient():
+    gradients = [
+        pyautogui.easeInQuad,
+        pyautogui.easeOutQuad,
+        pyautogui.easeInOutQuad,
+        pyautogui.easeInCubic,
+        pyautogui.easeOutCubic,
+        pyautogui.easeInOutCubic,
+        pyautogui.easeInQuart,
+        pyautogui.easeOutQuart,
+        pyautogui.easeInOutQuart,
+        pyautogui.easeInQuint,
+        pyautogui.easeOutQuint,
+        pyautogui.easeInOutQuint,
+        pyautogui.easeInSine,
+        pyautogui.easeOutSine,
+        pyautogui.easeInOutSine,
+        pyautogui.easeInExpo,
+        pyautogui.easeOutExpo,
+        pyautogui.easeInOutExpo,
+        pyautogui.easeInCirc,
+        pyautogui.easeOutCirc,
+        pyautogui.easeInOutCirc,
+        pyautogui.easeInElastic,
+        pyautogui.easeOutElastic,
+        pyautogui.easeInOutElastic,
+        pyautogui.easeInBounce,
+        pyautogui.easeOutBounce,
+        pyautogui.easeInOutBounce
+    ]
+    return random.choice(gradients)
 
 ## 各种内容处理函数
 
@@ -233,7 +278,7 @@ def format_cookies(cookie):
     cookiesJar = requests.utils.cookiejar_from_dict(manual_cookies, cookiejar=None, overwrite=True)
     return cookiesJar
 
-def format_sele_cookies(sele_cookie,):
+def format_sele_cookies(sele_cookie, domain):
     """
     将selenium格式cookie解析为session格式cookie
     """
@@ -241,10 +286,13 @@ def format_sele_cookies(sele_cookie,):
     cookies = json.loads(sele_cookie)
     for cookie in cookies:
         try:
-            name = cookie.get('name')
-            value = cookie.get('value')
-            if name and value:
-                manual_cookies[name] = value
+            if cookie.get('domain') == domain: # 需判断究竟是否需要限定domain
+                name = cookie.get('name')
+                value = cookie.get('value')
+                if name and value:
+                    manual_cookies[name] = value
+                else:
+                    continue
             else:
                 continue
         except Exception as e:

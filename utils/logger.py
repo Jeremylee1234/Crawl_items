@@ -1,21 +1,58 @@
-import logging
-import logging.handlers
-
+import alchemy as db
+import datetime
 '''
 日志模块
 '''
-LOG_FILENAME = './logger.log'
-logger = logging.getLogger()
+class Logger(object):
+    """
+    日志类
+    """
+    def __init__(self):
+        pass
 
-def set_logger():
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(process)d-%(threadName)s - '
-                                  '%(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s')
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-    file_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=10485760, mode='a', backupCount=5, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    def info(self, siteid, job=None, exception=None, info=None):
+        """
+        创建info类日志,err_level=0
+        """
+        new_log = db.Crawl_Log(
+            job = job,
+            info = info,
+            exception = exception,
+            err_level = 0,
+            occur_time = datetime.datetime.now(),
+            siteId = siteid
+        )
+        db.db_session.add(new_log)
+        db.db_session.commit()
+    
+    def debug(self, siteid, job=None, exception=None, info=None):
+        """
+        创建debug类日志,err_level=1
+        """
+        new_log = db.Crawl_Log(
+            job = job,
+            info = info,
+            exception = exception,
+            err_level = 1,
+            occur_time = datetime.datetime.now(),
+            siteId = siteid
+        )
+        db.db_session.add(new_log)
+        db.db_session.commit()
+    
+    def error(self, siteid, job=None, exception=None, info=None):
+        """
+        创建error类日志,err_level=2
+        """
+        new_log = db.Crawl_Log(
+            job = job,
+            info = info,
+            exception = exception,
+            err_level = 2,
+            occur_time = datetime.datetime.now(),
+            siteId = siteid
+        )
+        db.db_session.add(new_log)
+        db.db_session.commit()
 
-set_logger()
+logger = Logger()
