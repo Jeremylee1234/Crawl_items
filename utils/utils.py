@@ -24,6 +24,7 @@ def my_async(func):
 
 def random_gradient():
     gradients = [
+        pyautogui.linear,
         pyautogui.easeInQuad,
         pyautogui.easeOutQuad,
         pyautogui.easeInOutQuad,
@@ -44,15 +45,35 @@ def random_gradient():
         pyautogui.easeInOutExpo,
         pyautogui.easeInCirc,
         pyautogui.easeOutCirc,
-        pyautogui.easeInOutCirc,
-        pyautogui.easeInElastic,
-        pyautogui.easeOutElastic,
-        pyautogui.easeInOutElastic,
-        pyautogui.easeInBounce,
-        pyautogui.easeOutBounce,
-        pyautogui.easeInOutBounce
+        pyautogui.easeInOutCirc
     ]
     return random.choice(gradients)
+
+def random_num(min:int, max:int):
+    return random.randint(min, max)
+
+def random_rate(rate:float):
+    """
+    随机真假函数,传入rate为0-1间的小数,表示为True的概率
+    """
+    rate = rate * 100
+    randint = random.randint(0,100)
+    if randint <= rate:
+        return True
+    else:
+        return False
+
+def random_seconds(seconds_min:float, seconds_max:float):
+    seconds = random.randint(seconds_min *  1000, seconds_max * 1000) / 1000
+    return random.randint(seconds_min, seconds_max) / 1000
+
+def slide_btn(from_x, from_y, move_x, move_y):
+    if random_rate(0.6):
+        pyautogui.moveTo(random_num(100,1900), random_num(100, 1000), random_seconds(0.2, 0.7), random_gradient)
+        time.sleep(0, 0.8)
+        pyautogui.moveTo(from_x, from_y, random_seconds(0.2, 0.7), random_gradient)
+        time.sleep(0.)
+
 
 ## 各种内容处理函数
 
@@ -109,6 +130,17 @@ def get_money(string, unit=1):
         return string
     elif isinstance(string,int):
         return float(string) * unit
+    else:
+        return None
+
+def get_code(text:str):
+    if isinstance(text, str):
+        pattern = re.compile(r'[\d]{4,6}')
+        result = re.search(pattern, text).group()
+        if result:
+            return result
+        else:
+            return None
     else:
         return None
 

@@ -7,6 +7,9 @@ import alchemy as db
 from utils import utils
 from threading import Lock
 from utils.create_driver import Driver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 class UpdateCookies(object):
 
@@ -38,15 +41,15 @@ class UpdateCookies(object):
                     time.sleep(2)
                     slide_rows = utils.find_all_sele_xpath(self.driver, '//div[@id="nc_2__scale_text"]', '//div[@id="nc_1__scale_text"]', '//div[@class="slider"]')
                     row_length = slide_rows[0].size['width']
-                    slider = pyautogui.locateOnScreen('./images/slider.png')
-                    slider_b = pyautogui.locateOnScreen('./images/slider-b.png')
+                    slider = pyautogui.locateOnScreen('./files/images/slider.png')
+                    slider_b = pyautogui.locateOnScreen('./files/images/slider-b.png')
                     if slider_b:
                         pyautogui.moveTo(pyautogui.center(slider_b))
                         time.sleep(random.randint(5,30)/100)
                         pyautogui.dragRel(random.randint(row_length,row_length+50), random.randint(-20,20), random.randint(70,150)/100, random.choice([pyautogui.easeInOutQuart, pyautogui.easeInQuad, pyautogui.easeInOutQuad, pyautogui.easeOutQuad, pyautogui.easeInQuart]))
                         time.sleep(1.5)
                         success_time += 1
-                        login_coords = pyautogui.locateOnScreen('./images/h5_login.png')
+                        login_coords = pyautogui.locateOnScreen('./files/images/h5_login.png')
                         if login_coords:
                             time.sleep(1)
                             pyautogui.leftClick(pyautogui.center(login_coords))
@@ -58,7 +61,7 @@ class UpdateCookies(object):
                         pyautogui.dragRel(random.randint(row_length,row_length+50), random.randint(-20,20), random.randint(70,150)/100, random.choice([pyautogui.easeInOutQuart, pyautogui.easeInQuad, pyautogui.easeInOutQuad, pyautogui.easeOutQuad, pyautogui.easeInQuart]))
                         time.sleep(1.5)
                         success_time += 1
-                        login_coords = pyautogui.locateOnScreen('./images/h5_login.png')
+                        login_coords = pyautogui.locateOnScreen('./files/images/h5_login.png')
                         if login_coords:
                             time.sleep(1)
                             pyautogui.leftClick(pyautogui.center(login_coords))
@@ -68,7 +71,7 @@ class UpdateCookies(object):
                         continue
             except Exception as e:
                 print(e)
-                continue
+                return 
 
     @utils.my_async
     def slide_world_btn(self):
@@ -91,7 +94,7 @@ class UpdateCookies(object):
                     return 
                 
                 time.sleep(2)
-                slider = pyautogui.locateOnScreen('./images/slider_world.png')
+                slider = pyautogui.locateOnScreen('./files/images/slider_world.png')
                 choose_slide = random.randint(0,100) # 随机选择拖拽方式
                 if slider:
                     if choose_slide >= 30:
@@ -120,7 +123,7 @@ class UpdateCookies(object):
             except Exception as e:
                 watch_time += 1
                 print(e)
-                continue
+                return 
 
     @utils.my_async
     def click_world_login(self):
@@ -134,18 +137,18 @@ class UpdateCookies(object):
                 if self.driver.current_url == 'https://world.taobao.com/':
                     return 
             
-                lock.acquire()
+                self.lock.acquire()
                 login_frame = self.driver.find_elements_by_xpath('//iframe[@id="J_Member"]')[0]
                 self.driver.switch_to.frame(login_frame)
                 failed_info = self.driver.find_elements_by_xpath('//*[@class="errloading"]')
                 self.driver.switch_to.default_content()
-                lock.release()
+                self.lock.release()
 
                 if len(failed_info) >= 1:
                     return 
                 time.sleep(1)
             
-                login_coord = pyautogui.locateOnScreen('./images/world_login.png')
+                login_coord = pyautogui.locateOnScreen('./files/images/world_login.png')
                 if login_coord:
                     time.sleep(1)
                     x, y = pyautogui.center(login_coord)
@@ -193,10 +196,10 @@ class UpdateCookies(object):
                         time.sleep(0.05)
                     time.sleep(3)
                     login_frame = self.driver.find_elements_by_xpath('//iframe[contains(@src,"login.m.taobao.com")]')
-                    slider = pyautogui.locateOnScreen('./images/slider.png')
-                    slider_b = pyautogui.locateOnScreen('./images/slider-b.png')
+                    slider = pyautogui.locateOnScreen('./files/images/slider.png')
+                    slider_b = pyautogui.locateOnScreen('./files/images/slider-b.png')
                     if len(login_frame) == 0 and not slider and not slider_b:
-                        login_coords = pyautogui.locateOnScreen('./images/h5_login.png')
+                        login_coords = pyautogui.locateOnScreen('./files/images/h5_login.png')
                         if login_coords:
                             time.sleep(1)
                             pyautogui.leftClick(pyautogui.center(login_coords))
@@ -320,14 +323,14 @@ class UpdateCookies(object):
             return None
 
 def update_all_cookies():
-    all_cookies = db.get_cookies('ali-pc', False)
+    all_cookies = db.get_cookies(1, False)
     for cookie in all_cookies:
         try:
-            driver = Driver('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login').create_driver(need_proxy=False,ua='pc')
-            login_h5 = UpdateCookies(driver, cookie)
-            cookies = login_h5.login_world()
-            login_h5.update_cookie(cookies)
-            del login_h5
+            driver = Driver('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login').create_driver(need_proxy=True,ua='pc')
+            login = UpdateCookies(driver, cookie)
+            cookies = login.login_world()
+            login.update_cookie(cookies)
+            del login
         except Exception as e:
             print(f'更新cookie时出错:{e}')
             continue
