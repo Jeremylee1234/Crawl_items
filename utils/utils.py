@@ -13,6 +13,7 @@ from utils.config import global_config
 from utils.logger import logger
 
 ## 额外功能函数
+
 def my_async(func):
     """
     使函数异步执行
@@ -50,7 +51,7 @@ def random_gradient():
     return random.choice(gradients)
 
 def random_num(min:int, max:int):
-    return random.randint(min, max)
+    return random.randint(int(min*10), int(max*10))/10
 
 def random_rate(rate:float):
     """
@@ -64,16 +65,57 @@ def random_rate(rate:float):
         return False
 
 def random_seconds(seconds_min:float, seconds_max:float):
-    seconds = random.randint(seconds_min *  1000, seconds_max * 1000) / 1000
-    return random.randint(seconds_min, seconds_max) / 1000
+    seconds = random.randint(int(seconds_min *  100), int(seconds_max * 100))
+    return seconds / 100
 
 def slide_btn(from_x, from_y, move_x, move_y):
-    if random_rate(0.6):
-        pyautogui.moveTo(random_num(100,1900), random_num(100, 1000), random_seconds(0.2, 0.7), random_gradient)
-        time.sleep(0, 0.8)
-        pyautogui.moveTo(from_x, from_y, random_seconds(0.2, 0.7), random_gradient)
-        time.sleep(0.)
+    if random_rate(0.7):
+        pyautogui.moveTo(random_num(100,1900), random_num(100, 1000), random_seconds(0.2, 0.7), random_gradient())
+        time.sleep(random_seconds(0, 0.7))
+    pyautogui.moveTo(random_num(from_x-10, from_x+10), random_num(from_y-10, from_y+10), random_seconds(0.2, 0.7), random_gradient())
+    time.sleep(random_seconds(0, 0.7))
+    if random_rate(0.5):
+        if random_rate(0.5):
+            pyautogui.dragRel(random_num(move_x, move_x+150), random_num(move_y-10, move_y+10), random_seconds(0.6, 1.3), random_gradient())
+        else:
+            pyautogui.mouseDown()
+            time.sleep(random_seconds(0,0.4))
+            pyautogui.moveRel(random_num(move_x, move_x+150), random_num(move_y-10, move_y+10), random_seconds(0.6, 1.3), random_gradient())
+            pyautogui.mouseUp()
+    elif random_rate(0.4):
+        pyautogui.mouseDown()
+        time.sleep(random_seconds(0,0.4))
+        phase_a = random_num(move_x/3, move_x/2+50)
+        phase_b = random_num(move_x-phase_a+1, move_x-phase_a+100)
+        pyautogui.moveRel(phase_a, random_num(move_y-5, move_y+5), random_seconds(0.2, 0.7), random_gradient())
+        if random_rate(0.1):
+            time.sleep(random_seconds(0,0.2))
+        pyautogui.moveRel(phase_b, random_num(move_y-5, move_y+5), random_seconds(0.3, 1), random_gradient())
+        pyautogui.mouseUp()
+    else:
+        pyautogui.mouseDown()
+        time.sleep(random_seconds(0,0.4))
+        phase_a = random_num(move_x/4, move_x/2)
+        phase_b = random_num(move_x/3, move_x/2)
+        phase_c = move_x - phase_a - phase_b
+        phase_c = random_num(phase_c, phase_c + 100)
+        pyautogui.moveRel(phase_a, random_num(move_y-3, move_y+3), random_seconds(0.3, 0.5), random_gradient())
+        pyautogui.moveRel(phase_b, random_num(move_y-7, move_y+7), random_seconds(0.2, 0.6), random_gradient())
+        if random_rate(0.3):
+            time.sleep(random_seconds(0,0.3))
+        pyautogui.moveRel(phase_c, random_num(move_y-4, move_y+4), random_seconds(0.3, 0.9), random_gradient())
+        pyautogui.mouseUp()
 
+def click_btn(x, y, accurate=False):
+    if random_rate(0.5):
+        pyautogui.moveTo(random_num(100,1900), random_num(100, 1000), random_seconds(0.2, 0.7), random_gradient())
+        time.sleep(random_seconds(0, 0.7))
+    if accurate:
+        pyautogui.moveTo(x, y, random_seconds(0.2,1.2),random_gradient())
+    else:
+        pyautogui.moveTo(random_num(x-20, x+20), random_num(y-10, y+10), random_seconds(0.2,1.2), random_gradient())
+    time.sleep(random_seconds(0,0.5))
+    pyautogui.click()
 
 ## 各种内容处理函数
 
@@ -86,6 +128,41 @@ def get_id():
     timedelta = now - date_benchmark
     return int(timedelta.total_seconds()*10000)
 
+def get_int(string:str):
+    """
+    获取文本中的整数
+    """
+    if isinstance(string, str):
+        try:
+            pattern = re.compile(r'\d+')
+            string = re.search(pattern, string).group()
+            return int(string)
+        except Exception as e:
+            print(e)
+            return None
+    else:
+        return None
+
+def escape_jsonp(string:str, type='dict'):
+    """
+    将网络请求的jsonp文本修正为可以被json解析的字符串
+    """
+    if isinstance(string, str):
+        if type == 'dict':
+            pattern = re.compile(r'{[\s\S]*?}')
+        elif type == 'list':
+            pattern = re.compile(r'\[[\s\S]*?\]')
+        else:
+            print('type错误')
+            return None
+        strings = re.findall(pattern, string)
+        if len(strings) >= 1:
+            return strings[0]
+        else:
+            return None
+    else:
+        return None
+
 def get_money(string, unit=1):
     """
     对价格进行进一步修正:
@@ -93,13 +170,24 @@ def get_money(string, unit=1):
     数值:直接返回该值
     """
     if isinstance(string,str):
-        if '百万' in string:
+        if '亿' in string:
             pattern = re.compile(r'[\d,.]+')
             numbers = re.findall(pattern,string)
             if len(numbers) >= 1:
                 for number in numbers:
                     try:
-                        return float(number[0].replace(',','')) * 1000000 * unit
+                        return float(number.replace(',','')) * 100000000 * unit
+                    except:
+                        continue
+            else:
+                return None
+        elif '百万' in string:
+            pattern = re.compile(r'[\d,.]+')
+            numbers = re.findall(pattern,string)
+            if len(numbers) >= 1:
+                for number in numbers:
+                    try:
+                        return float(number.replace(',','')) * 1000000 * unit
                     except:
                         continue
             else:
@@ -110,7 +198,7 @@ def get_money(string, unit=1):
             if len(numbers) >= 1:
                 for number in numbers:
                     try:
-                        return float(number[0].replace(',','')) * 10000 * unit
+                        return float(number.replace(',','')) * 10000 * unit
                     except:
                         continue
             else:
@@ -121,7 +209,7 @@ def get_money(string, unit=1):
             if len(numbers) >= 1:
                 for number in numbers:
                     try:
-                        return float(number[0].replace(',','')) * unit
+                        return float(number.replace(',','')) * unit
                     except:
                         continue
             else:
@@ -295,6 +383,17 @@ def find_all_sele_xpath(driver, *xpaths):
             continue
     return results
 
+def get_attribute(driver, xpath, attribute):
+    try:
+        elements = driver.find_elements_by_xpath(xpath)
+        if len(elements) >= 1:
+            return elements[0].get_attribute(attribute)
+        else:
+            return None
+    except Exception as e:
+        print(e)
+        return None
+
 ## 处理cookies
 
 def format_cookies(cookie):
@@ -351,6 +450,18 @@ def get_phase(string:str):
             return '其他'
     else:
         return '其他'
+
+def get_status(datas:list):
+    """
+    根据传入的淘宝司法的selenium元素对象列表判断拍卖状态
+    """
+    if isinstance(datas, list):
+        for index,data in enumerate(datas):
+            if data.is_displayed():
+                return index
+        return 5
+    else:
+        return 5
 
 def parse_coordinate(string:str):
     if isinstance(string, str):

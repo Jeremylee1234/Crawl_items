@@ -17,6 +17,8 @@
 * err_tims需要进一步进行全面的检查
 * 若id不使用数据表自增创建而自行指定，则在数据库commit失败时可能导致的itemid不同表不一致现象需要合理的itemid确认机制来规避之
 * 需要找到新的模拟登陆方式
+* 图片考虑重新命名与截取
+* ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response',))
 
 # 验证登陆：
 1. 接管手机短信，验证码登陆网页移动端

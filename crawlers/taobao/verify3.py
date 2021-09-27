@@ -2,14 +2,12 @@ import os
 import time
 import json
 import random
-import datetime
 import pyautogui
 import alchemy as db
 from utils import utils
 from threading import Lock
 from utils.create_driver import Driver
 from selenium.webdriver.common.by import By
-from crawlers.taobao import msg_alchemy as msg_db
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -21,8 +19,37 @@ class UpdateCookies(object):
         self.cookie = cookie['cookie']
 
     @utils.my_async
-    def slide_code_btn(self):
-        pass
+    def slide_taobao_btn(self):
+        watch_time = 0
+        do_times = 0
+        while True:
+            watch_time += 1
+            try:
+                WebDriverWait(self.driver, 0.2).until(
+                    EC.presence_of_element_located((By.ID, 'login-form'))
+                )
+                if watch_time >= 30:
+                    self.driver.quit()
+                    return 
+                if do_times >= 3:
+                    self.driver.quit()
+                    return 
+                if 'login' not in self.driver.current_url:
+                    return 
+                slider = pyautogui.locateOnScreen('./files/images/slider_pc_taobao.png')
+                if slider:
+                    x, y = pyautogui.center(slider)
+                    self.lock.acquire()
+                    utils.slide_btn(x, y, 300, 0)
+                    self.lock.release()
+                    do_times += 1
+                else:
+                    time.sleep(3)
+                    continue
+            except Exception as e:
+                watch_time += 1
+                print(e)
+                return 
 
     @utils.my_async
     def click_taobao_login(self):
@@ -58,43 +85,34 @@ class UpdateCookies(object):
                 watch_time += 1
                 continue
 
-    def login_by_code(self):
+    # 登录PC端淘宝网页
+    def login_taobao(self):
         if self.driver == None:
             return None
         elif self.err_times <= 5:
             try:
                 if 'login.taobao.com/member/login.jhtml' in self.driver.current_url:
                     time.sleep(0.5)
-                    switch_sms = self.driver.find_elements_by_xpath('//div[@class="login-password"]/div[1]/a[2]')[0]
-                    switch_sms.click()
-                    time.sleep(1)
+                    # try:
                     input_username = WebDriverWait(self.driver, 15).until(
-                        EC.presence_of_element_located((By.ID, 'fm-sms-login-id'))
+                        EC.presence_of_element_located((By.ID, 'fm-login-id'))
                     )
                     input_password = WebDriverWait(self.driver, 15).until(
-                        EC.presence_of_element_located((By.ID, 'fm-smscode'))
+                        EC.presence_of_element_located((By.ID, 'fm-login-password'))
                     )
                     time.sleep(0.5)
                     input_username.clear()
                     input_password.clear()
 
-                    for u in self.cookie.phone:
+                    for u in self.cookie.username:
                         input_username.send_keys(u)
                         time.sleep(random.randint(10,70)/1000)
-                    time.sleep(0.5)
-                    self.slide_code_btn()
-                    send_code_btn = self.driver.find_elements_by_xpath('//div[@class="send-btn"]/a')[0]
-                    send_code_btn.click()
-                    message = utils.get_code(msg_db.get_new_msg())
-                    if message == None:
-                        self.err_times += 10
-                        self.driver.refresh()
-                        return self.login_by_code()
-                    for p in message:
+                    for p in self.cookie.password:
                         input_password.send_keys(p)
-                        time.sleep(random.randint(30,100)/1000)
+                        time.sleep(random.randint(10,70)/1000)
                     time.sleep(0.7)
                     self.click_taobao_login()
+                    self.slide_taobao_btn()
                     check_times = 0
                     while len(self.driver.find_elements_by_xpath('//iframe[@id="baxia-dialog-content"]')) >= 1 and self.driver.find_elements_by_xpath('//iframe[@id="baxia-dialog-content"]')[0].is_diplayed() or 'login' in self.driver.current_url:
                         self.lock.acquire()
@@ -124,14 +142,17 @@ class UpdateCookies(object):
                     self.driver.quit()
                     return cookies
                 else:
-                    self.driver.get('https://login.taobao.com/member/login.jhtml')        
+                    self.driver.get('https://login.taobao.com/member/login.jhtml')
                     time.sleep(1)
                     self.err_times += 1
-                    return self.login_by_code()
+                    return self.login_world()
             except Exception as e:
                 print(e)
-                self.err_times += 1
-                return self.login_by_code()
+                self.err_times += 2
+                return self.login_world()
+        else:
+            print('failed!!!')
+            return None
 
     def update_cookie(self, cookies):
         if cookies:
@@ -143,12 +164,12 @@ class UpdateCookies(object):
             return None
 
 def update_all_cookies():
-    all_cookies = db.get_cookies(siteId=1, useful=False, phone=True)
+    all_cookies = db.get_cookies(1, False)
     for cookie in all_cookies:
         try:
-            driver = Driver('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login').create_driver(need_proxy=False,ua='pc')
+            driver = Driver('https://login.taobao.com/member/login.jhtml').create_driver(need_proxy=False,ua='pc')
             login = UpdateCookies(driver, cookie)
-            cookies = login.login_by_code()
+            cookies = login.login_taobao()
             login.update_cookie(cookies)
             del login
         except Exception as e:

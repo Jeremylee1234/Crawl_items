@@ -12,7 +12,21 @@ sf_pc_detail_headers = {
     'sec-fetch-site': 'same-site',
     'sec-fetch-user': '?1',
     'upgrade-insecure-requests': '1',
-    'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36'
+    'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78'
+}
+sf_pc_detail_headers_2 = {
+    'accept': '*/*',
+    'accept-encoding': 'gzip, deflate, br',
+    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+    'cache-control': 'no-cache',
+    'pragma': 'no-cache',
+    'referer': 'https://sf.taobao.com/',
+    'sec-ch-ua': '"Chromium";v="92", " Not A;Brand";v="99", "Microsoft Edge";v="92"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-fetch-dest': 'script',
+    'sec-fetch-mode': 'no-cors',
+    'sec-fetch-site': 'same-site',
+    'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.78'
 }
 sf_province = [
 	('上海',4),
@@ -61,3 +75,7 @@ sf_category = [
 	('其他', 1, '200798003', 23),
 	('债权', 2, '200816002', 14)
 ]
+industry_a = []
+industry_b = []
+industry_c = []
+

@@ -1,5 +1,4 @@
 
-from utils import utils
 import datetime
 
 class Item(object):
@@ -33,7 +32,7 @@ class Item(object):
 		self.people_viewed = None # 点击人数,int
 		self.people_bid = None # 出价人数,int
 		self.location = None # 项目地址,str
-		self.area = None # 资产面积,float
+		self.area = None # 房地产类的资产面积,股权债权类的单位为万元的保证金,float
 		self.intro = '' # 项目说明,str
 		self.other_info = None # 其他项目说明,str
 		self.attaches = '[]' # 项目附件,为单引号列表转字符串,str
@@ -48,6 +47,15 @@ class Item(object):
 		self.auction_people = '[]' # 参拍人员信息,为单引号列表转字符串,str
 		self.lng = None # 经度,float
 		self.lat = None # 纬度,float
+		self.discount = None # 网站折扣率字段
+		self.code = None # 网站项目编号字段
+		self.flaw = None # 网站项目标签字段
+		self.report = None # 网站项目是否可生成报告字段
+		self.traffic = None # 网站项目交通字段
+		self.school = None # 网站教育学校字段
+		self.envir = None # 网站环境配套字段
+		self.contact_phone = None # 网站联系电话字段
+		self.contactor = None # 网站联系人字段
 		self.uploaded = 0 # 项目是否已上传网站,boolean
 		self.extra1 = None # 预留位1,str
 		self.extra2 = None # 预留位2,str
@@ -62,6 +70,8 @@ class Item(object):
 		self.industryId_a = None # 一级行业id,int
 		self.industryId_b = None # 二级行业id,int
 		self.industryId_c = None # 三级行业id,int
+
+		self.bids = [] # 存储全部出价记录,需要后续处理
 		
 class Purchaser(object):
 	"""
@@ -91,4 +101,3 @@ class Crawl_Log(object):
 		self.err_level = err_level # 错误登记,int
 		self.occur_time = datetime.datetime.now() # 错误发生时间,datetime.datetime
 		self.siteId = siteid
-

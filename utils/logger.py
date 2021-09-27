@@ -17,7 +17,7 @@ class Logger(object):
         new_log = db.Crawl_Log(
             job = job,
             info = info,
-            exception = exception,
+            exception = str(exception),
             err_level = 0,
             occur_time = datetime.datetime.now(),
             siteId = siteid
@@ -32,7 +32,7 @@ class Logger(object):
         new_log = db.Crawl_Log(
             job = job,
             info = info,
-            exception = exception,
+            exception = str(exception),
             err_level = 1,
             occur_time = datetime.datetime.now(),
             siteId = siteid
@@ -47,7 +47,7 @@ class Logger(object):
         new_log = db.Crawl_Log(
             job = job,
             info = info,
-            exception = exception,
+            exception = str(exception),
             err_level = 2,
             occur_time = datetime.datetime.now(),
             siteId = siteid

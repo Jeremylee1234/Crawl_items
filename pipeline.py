@@ -73,3 +73,17 @@ def upload_item(item:Item):
 	except Exception as e:
 		logger.info(f'上传item:{item}时出错:{e}')
 		db.db_session.rollback()
+
+def update_item(item_origin:db.Items, item_result:Item):
+	item_origin.status = item_result.status
+	item_origin.starting_price = item_result.starting_price
+	item_origin.current_price = item_result.current_price
+	item_origin.max_price = item_result.max_price
+	item_origin.deal_price = item_result.deal_price
+	item_origin.updated_time = item_result.updated_time
+	item_origin.deal_time = item_result.deal_time
+	item_origin.auction_people = item_result.auction_people
+
+	new_purchaser = db.Purchaser(
+		
+	)

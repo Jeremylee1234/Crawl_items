@@ -9,16 +9,17 @@ from threading import Lock
 from utils.create_driver import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 
 class UpdateCookies(object):
-
     def __init__(self, driver, cookie):
         self.err_times = 0
         self.driver = driver
         self.lock = Lock()
         self.cookie = cookie['cookie']
 
+    # 淘宝移动端登陆页面滑块功能，现已弃用
     @utils.my_async
     def slide_h5_btn(self):
         watch_time = 0
@@ -73,97 +74,7 @@ class UpdateCookies(object):
                 print(e)
                 return 
 
-    @utils.my_async
-    def slide_world_btn(self):
-        watch_time = 0
-        while True:
-            watch_time += 1
-            try:
-                if watch_time >= 20:
-                    self.driver.quit()
-                    return 
-                if self.driver.current_url == 'https://world.taobao.com/':
-                    return 
-                self.lock.acquire()
-                login_frame = self.driver.find_elements_by_xpath('//iframe[@id="J_Member"]')[0]
-                self.driver.switch_to.frame(login_frame)
-                failed_info = self.driver.find_elements_by_xpath('//*[@class="errloading"]')
-                self.driver.switch_to.default_content()
-                self.lock.release()
-                if len(failed_info) >= 1:
-                    return 
-                
-                time.sleep(2)
-                slider = pyautogui.locateOnScreen('./files/images/slider_world.png')
-                choose_slide = random.randint(0,100) # 随机选择拖拽方式
-                if slider:
-                    if choose_slide >= 30:
-                        # 鼠标点击同拖拽分离
-                        pyautogui.moveTo(x=random.randint(10,1000),y=random.randint(10,1000),duration=0.5,tween=pyautogui.easeInOutQuad)
-                        x, y = pyautogui.center(slider)
-                        pyautogui.moveTo(x=random.randint(x-10,x+10),y=random.randint(y-10,y+10),duration=0.5,tween=pyautogui.easeInOutQuart)
-                        time.sleep(random.randint(5,30)/100)
-                        pyautogui.mouseDown()
-                        pyautogui.moveRel(random.randint(90,180), random.randint(-15,15), random.randint(10,40)/100, utils.random_gradient())
-                        pyautogui.moveRel(random.randint(165,330), random.randint(-40,40), random.randint(30,80)/100, utils.random_gradient())
-                        pyautogui.moveRel(random.randint(45,90), random.randint(-15,15), random.randint(12,55)/100, utils.random_gradient())
-                        time.sleep(0.01)
-                        pyautogui.mouseUp()
-                        time.sleep(1.5)
-                    else:
-                        # 鼠标点击同拖拽合并为drag
-                        pyautogui.moveTo(x=random.randint(100,1000),y=random.randint(100,1000),duration=0.5,tween=pyautogui.easeInOutQuad)
-                        x, y = pyautogui.center(slider)
-                        pyautogui.moveTo(x=random.randint(x-10,x+10),y=random.randint(y-10,y+10),duration=0.5,tween=pyautogui.easeInOutQuart)
-                        time.sleep(random.randint(5,30)/100)
-                        pyautogui.dragRel(random.randint(301,550), random.randint(-40,40), random.randint(40,150)/100, utils.random_gradient())
-                        time.sleep(1.5)
-                else:
-                    continue
-            except Exception as e:
-                watch_time += 1
-                print(e)
-                return 
-
-    @utils.my_async
-    def click_world_login(self):
-        watch_time = 0
-        while True:
-            watch_time += 1
-            try:
-                if watch_time >= 10:
-                    self.driver.quit()
-                    return 
-                if self.driver.current_url == 'https://world.taobao.com/':
-                    return 
-            
-                self.lock.acquire()
-                login_frame = self.driver.find_elements_by_xpath('//iframe[@id="J_Member"]')[0]
-                self.driver.switch_to.frame(login_frame)
-                failed_info = self.driver.find_elements_by_xpath('//*[@class="errloading"]')
-                self.driver.switch_to.default_content()
-                self.lock.release()
-
-                if len(failed_info) >= 1:
-                    return 
-                time.sleep(1)
-            
-                login_coord = pyautogui.locateOnScreen('./files/images/world_login.png')
-                if login_coord:
-                    time.sleep(1)
-                    x, y = pyautogui.center(login_coord)
-                    pyautogui.moveTo(x=random.randint(x-10,x+10),y=random.randint(y-10,y+10),duration=0.5,tween=pyautogui.easeInOutQuart)
-                    time.sleep(0.2)
-                    pyautogui.leftClick()
-                    return 
-                else:
-                    continue
-            except Exception as e:
-                print(e)
-                watch_time += 1
-                continue
-    
-    # 登陆移动端淘宝网页
+    # 淘宝移动端登陆，现已弃用
     def login_h5(self):
         if self.driver == None:
             return None
@@ -230,88 +141,158 @@ class UpdateCookies(object):
             print('failed!!!')
             return None
 
+    @utils.my_async
+    def slide_world_btn(self):
+        watch_time = 0
+        do_times = 0
+        while True:
+            watch_time += 1
+            try:
+                self.lock.acquire()
+                WebDriverWait(self.driver, 1).until(
+                    EC.presence_of_element_located((By.XPATH, '//iframe[@id="J_Member"]'))
+                )
+                self.lock.release()
+            except Exception as e:
+                print(e)
+                return 
+            if watch_time >= 30:
+                return 
+            if do_times >= 2:
+                return 
+            if 'login' not in self.driver.current_url:
+                return 
+
+            slider = pyautogui.locateOnScreen('./files/images/slider_world.png')
+            if slider:
+                x, y = pyautogui.center(slider)
+                utils.slide_btn(x, y, 300, 0)
+                do_times += 1
+            else:
+                continue
+
+    @utils.my_async
+    def click_world_login(self):
+        watch_time = 0
+        do_times = 0
+        while True:
+            watch_time += 1
+            try:
+                self.lock.acquire()
+                WebDriverWait(self.driver, 1).until(
+                    EC.presence_of_element_located((By.XPATH, '//iframe[@id="J_Member"]'))
+                )
+                self.lock.release()
+            except Exception as e:
+                print(e)
+                return 
+            if watch_time >= 20:
+                return 
+            if do_times >= 2:
+                return 
+            if 'login' not in self.driver.current_url:
+                return 
+            
+            login_coord = pyautogui.locateOnScreen('./files/images/world_login.png')
+            if login_coord:
+                x, y = pyautogui.center(login_coord)
+                utils.click_btn(x, y)
+                do_times += 1
+            else:
+                time.sleep(4.5)
+                continue
+
     # 登录国际PC端淘宝网页
     def login_world(self):
         if self.driver == None:
             return None
         elif self.err_times <= 5:
-            try:
-                if self.driver.current_url == 'https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login':
-                    try:
-                        self.driver.maximize_window()
-                    except Exception as e:
-                        print(e)
-                    time.sleep(0.5)
-                    login_frame = self.driver.find_elements_by_xpath('//iframe[@id="J_Member"]')
-                    if len(login_frame) >= 1:
-                        login_frame = login_frame[0]
+            # try:
+            if self.driver.current_url == 'https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login':
+                try:
+                    self.driver.maximize_window()
+                except Exception as e:
+                    print(e)
+                time.sleep(0.5)
+                login_frame = self.driver.find_elements_by_xpath('//iframe[@id="J_Member"]')
+                if len(login_frame) >= 1:
+                    login_frame = login_frame[0]
+                    self.driver.switch_to.frame(login_frame)
+        
+                    # try:
+                    input_username = WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.ID, 'fm-login-id'))
+                    )
+                    input_password = WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.ID, 'fm-login-password'))
+                    )
+                    time.sleep(2)
+                    input_username.clear()
+                    input_password.clear()
+
+                    for u in self.cookie.username:
+                        input_username.send_keys(u)
+                        time.sleep(random.randint(10,70)/1000)
+                    for p in self.cookie.password:
+                        input_password.send_keys(p)
+                        time.sleep(random.randint(10,70)/1000)
+                    self.driver.switch_to.default_content()
+                    time.sleep(2)
+                    self.click_world_login()
+                    self.slide_world_btn()
+                    
+                    check_times = 0
+                    while 'login' in self.driver.current_url:
+                        self.lock.acquire()
                         self.driver.switch_to.frame(login_frame)
-            
-                        # try:
-                        input_username = WebDriverWait(self.driver, 15).until(
-                            EC.presence_of_element_located((By.ID, 'fm-login-id'))
-                        )
-                        input_password = WebDriverWait(self.driver, 15).until(
-                            EC.presence_of_element_located((By.ID, 'fm-login-password'))
-                        )
-                        time.sleep(2)
-                        input_username.clear()
-                        input_password.clear()
-
-                        for u in self.cookie.username:
-                            input_username.send_keys(u)
-                            time.sleep(random.randint(10,70)/1000)
-                        for p in self.cookie.password:
-                            input_password.send_keys(p)
-                            time.sleep(random.randint(10,70)/1000)
-                        self.driver.switch_to.default_content()
-                        time.sleep(2)
-                        self.slide_world_btn()
-                        self.click_world_login()
-                        check_times = 0
-                        while 'login' in self.driver.current_url:
-                            print(self.driver.current_url)
-                            # lock.acquire()
-                            # self.driver.switch_to.frame(login_frame)
-                            # failed_info = self.driver.find_elements_by_xpath('//*[@id="baxia-dialog-content"]')
-                            # self.driver.switch_to.default_content()
-                            # lock.release()
-                            # if len(failed_info) >= 1 and failed_info[0].is_displayed():
-                            #     time.sleep(3)
-                            #     self.err_times += 1
-                            #     self.driver.refresh()
-                            #     return self.login_world()
-                            check_times += 1
-                            time.sleep(3)
-                            if check_times >= 100:
-                                print('最大尝试次数,判断登陆失败')
-                                self.err_times += 10
+                        failed_info = self.driver.find_elements_by_xpath('//*[@id="baxia-dialog-content"]')
+                        if len(failed_info) >= 1 and failed_info[0].is_displayed():
+                            failed_info = failed_info[0]
+                            self.driver.switch_to.frame(failed_info)
+                            failed_info = self.driver.find_elements_by_xpath('//a[@id="nc_1_refresh1"]')
+                            if len(failed_info) >= 1 and failed_info[0].is_displayed():
+                                self.driver.switch_to.default_content()
+                                self.err_times += 1
+                                try:
+                                    self.driver.refresh()
+                                except TimeoutException:
+                                    self.driver.execute_script('window.stop()')
+                                time.sleep(5)
+                                self.lock.release()
                                 return self.login_world()
-                        time.sleep(7)
-                        cookies = self.driver.get_cookies()
-                        self.driver.quit()
-                        return cookies
-                    else:
-                        self.driver.get('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login')
-                        time.sleep(2)
-                        self.err_times += 2
-                        return self.login_world()
-
+                        self.driver.switch_to.default_content()
+                        self.lock.release()
+                        check_times += 1
+                        time.sleep(3)
+                        if check_times >= 20:
+                            print('最大尝试次数,判断登陆失败')
+                            self.err_times += 10
+                            return self.login_world()
+                    time.sleep(2)
+                    WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located((By.ID, 'search-box'))
+                    )
+                    cookies = self.driver.get_cookies()
+                    self.driver.quit()
+                    return cookies
                 else:
                     self.driver.get('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login')
                     time.sleep(2)
                     self.err_times += 2
                     return self.login_world()
-            except Exception as e:
-                print(e)
+
+            else:
+                self.driver.get('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login')
+                time.sleep(2)
                 self.err_times += 2
                 return self.login_world()
+            # except Exception as e:
+            #     print(e)
+            #     self.err_times += 2
+            #     return self.login_world()
         else:
             print('failed!!!')
             return None
-
-    def login_china(self):
-        pass
 
     def update_cookie(self, cookies):
         if cookies:
@@ -326,10 +307,10 @@ def update_all_cookies():
     all_cookies = db.get_cookies(1, False)
     for cookie in all_cookies:
         try:
-            driver = Driver('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login').create_driver(need_proxy=True,ua='pc')
+            driver = Driver('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login').create_driver(need_proxy=False,ua='pc')
             login = UpdateCookies(driver, cookie)
-            cookies = login.login_world()
-            login.update_cookie(cookies)
+            cookie = login.login_world()
+            login.update_cookie(cookie)
             del login
         except Exception as e:
             print(f'更新cookie时出错:{e}')

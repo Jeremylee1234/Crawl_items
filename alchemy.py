@@ -47,7 +47,7 @@ class Items(Base):
 	url = Column(String(255),nullable=True,comment="项目拍卖链接")
 	title = Column(String(255),nullable=False,index=True,comment="项目标题")
 	phase = Column(Enum('一拍','二拍','重新拍卖','变卖','其他'),nullable=False,index=True,server_default='一拍',comment="拍卖阶段：一拍、二拍、重新拍卖、变卖、其他")
-	status = Column(Enum('0','1','2','3','4'),nullable=False,index=True,server_default='0',comment="项目状态：0:即将开拍,1:正在拍卖,2:结束拍卖,3:取消拍卖")
+	status = Column(Enum('0','1','2','3','4','5'),nullable=False,index=True,server_default='0',comment="项目状态：0:即将开拍,1:正在拍卖,2:结束拍卖,3:拍卖中断,4:取消拍卖,5:其他")
 	category = Column(String(32),nullable=False,comment="项目种类,参考category表的值")
 	repeat = Column(String(255),index=True,comment="项目去重标志字段")
 
@@ -95,6 +95,15 @@ class Items(Base):
 	lng = Column(Float,nullable=True,comment="经度")
 	lat = Column(Float,nullable=True,comment="纬度")
 
+	discount = Column(Float,nullable=True,comment="网站折扣率字段")
+	code = Column(BigInteger,nullable=True,comment="网站项目编码字段")
+	flaw = Column(String(255),nullable=True,comment="网站项目标签栏字段")
+	report = Column(Boolean,nullable=False,server_default=text('0'),comment="网站是否可生成报告字段")
+	traffic = Column(String(255),nullable=False,server_default='交通全面信息详见电脑版网站地图地理信息',comment="网站项目交通字段")
+	school = Column(String(255),nullable=False,server_default='教育学校全面信息详见电脑版网站地图地理信息',comment="网站教育学校字段")
+	envir = Column(String(255),nullable=False,server_default='环境配套超市医院健身娱乐银行等全面信息详见电脑版网站地图地理信息',comment="网站环境配套字段")
+	contact_phone = Column(String(255),nullable=False,server_default='021-68828928',comment="网站联系电话字段")
+	contactor = Column(String(255),nullable=False,server_default='资产信息网 ',comment="网站联系人字段")
 	uploaded = Column(Boolean,nullable=True,server_default=text('0'),comment="项目是否已上传到网站服务器")
 
 	extra1 = Column(String(255),nullable=True,comment="预留位1")
@@ -298,21 +307,22 @@ class Bid(Base):
 	itemId = Column(BigInteger,ForeignKey('item.id'),nullable=False,comment='项目主键')
 
 class Cookies(Base):
-    """
-    账号信息表
-    """
-    __tablename__ = 'cookies'
-    __table_args__ = {
-        'mysql_engine': 'InnoDB',
-        'mysql_charset': 'utf8'
-    }
-    id = Column(BigInteger,primary_key=True,autoincrement=True,comment="主键id")
-    username = Column(String(255),nullable=False,comment="用户名")
-    password = Column(String(255),nullable=False,comment="密码")
-    cookie = Column(Text,nullable=True,comment="账号最新cookie")
-    useful = Column(Boolean,nullable=False,server_default=text('0'),comment="cookie是否仍可用")
-    siteId = Column(Integer,ForeignKey('site.id'),nullable=False,server_default=text('1'),comment="站点id")
-    extra = Column(String(255),nullable=True,comment="预留位1")
+	"""
+	账号信息表
+	"""
+	__tablename__ = 'cookies'
+	__table_args__ = {
+		'mysql_engine': 'InnoDB',
+		'mysql_charset': 'utf8'
+	}
+	id = Column(BigInteger,primary_key=True,autoincrement=True,comment="主键id")
+	username = Column(String(255),nullable=False,comment="用户名")
+	password = Column(String(255),nullable=False,comment="密码")
+	cookie = Column(Text,nullable=True,comment="账号最新cookie")
+	phone = Column(String(32),nullable=False,default='',comment="注册手机号")
+	useful = Column(Boolean,nullable=False,server_default=text('0'),comment="cookie是否仍可用")
+	siteId = Column(Integer,ForeignKey('site.id'),nullable=False,server_default=text('1'),comment="站点id")
+	extra = Column(String(255),nullable=True,comment="预留位1")
 
 class Crawl_Log(Base):
 	"""
@@ -339,8 +349,11 @@ def get_items_repeat(siteId, provinceId=None):
         all_id = db_session.query(Items.repeat).filter(Items.siteId == siteId).all()
     return [i[0] for i in all_id]
 
-def get_cookies(siteId, useful=True):
-    return [{'cookie': cookie, 'err_times': 0} for cookie in db_session.query(Cookies).filter(and_(Cookies.siteId == siteId, Cookies.useful == useful)).all()]
+def get_cookies(siteId, useful=True, phone=False):
+	if phone:
+		return [{'cookie': cookie, 'err_times': 0} for cookie in db_session.query(Cookies).filter(and_(Cookies.siteId == siteId, Cookies.useful == useful, Cookies.phone != '')).all()]
+	else:
+		return [{'cookie': cookie, 'err_times': 0} for cookie in db_session.query(Cookies).filter(and_(Cookies.siteId == siteId, Cookies.useful == useful)).all()]
 
 def disable_cookie(cookie:dict):
     obj = db_session.query(Cookies).filter(Cookies.id == cookie['cookie'].id).first()
