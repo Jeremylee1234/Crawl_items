@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from data_formate import Item
 from sqlalchemy import Table,MetaData,create_engine,Column,String,Integer,Boolean,TIMESTAMP,func,Text,Float,BigInteger,UniqueConstraint,SMALLINT,and_,or_,not_,Enum,text
 from sqlalchemy.orm import scoped_session,sessionmaker,relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -112,6 +113,7 @@ class Items(Base):
 	extra4 = Column(String(255),nullable=True,comment="预留位4")
 	extra5 = Column(String(255),nullable=True,comment="预留位5")
 
+	crawled_times = Column(Integer,nullable=False,server_default=text('0'),comment="已爬取次数,一般最高次数为3次")
 	siteId = Column(Integer,ForeignKey('site.id'),nullable=False,comment="项目来源网站id")
 
 	categoryId = Column(Integer,ForeignKey('category.id'),nullable=True,comment="种类id(外键)")
@@ -348,6 +350,10 @@ def get_items_repeat(siteId, provinceId=None):
     else:
         all_id = db_session.query(Items.repeat).filter(Items.siteId == siteId).all()
     return [i[0] for i in all_id]
+
+def get_update_items():
+	now = datetime.datetime.now()
+	return db_session.query(Items).filter(and_(Items.status.in_(['0','1']), Items.end_time <= now)).all()
 
 def get_cookies(siteId, useful=True, phone=False):
 	if phone:

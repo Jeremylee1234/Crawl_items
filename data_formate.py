@@ -63,6 +63,7 @@ class Item(object):
 		self.extra4 = None # 预留位4,str
 		self.extra5 = None # 预留位5,str
 		self.siteId = site_id # 站点id,必需字段,int
+		self.crawled_time = 1 # 已爬取次数
 		self.categoryId = None # 种类id,外键,为category表中id值,int
 		self.provinceId = None # 省份id,外键,为province表中id值,int
 		self.cityId = None # 城市id,外键,为city表中id值,int

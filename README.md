@@ -14,11 +14,12 @@
 * data_formate中now为全局变量导致其值不会随真实时间而更新,会导致计算错误
 * utils.py中对于二次处理item的函数需要修正
 * ali_sf中当更新cookie后若全部更新失败会导致错误
-* err_tims需要进一步进行全面的检查
+* err_tims及报错+日志需要进一步进行全面的检查
 * 若id不使用数据表自增创建而自行指定，则在数据库commit失败时可能导致的itemid不同表不一致现象需要合理的itemid确认机制来规避之
 * 需要找到新的模拟登陆方式
 * 图片考虑重新命名与截取
-* ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response',))
+* utils.utils.formate_timestamp添加精确到分钟的转换
+* update_item和parse_detail的bids及confirm需要再次处理
 
 # 验证登陆：
 1. 接管手机短信，验证码登陆网页移动端

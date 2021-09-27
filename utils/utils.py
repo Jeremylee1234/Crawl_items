@@ -482,8 +482,8 @@ def formate_timestamp(time_num):
             time_begin = datetime.datetime(1970,1,1,8,0,0)
             time = time_begin + datetime.timedelta(milliseconds=time_num)
             return time
-        elif isinstance(time_num, str):
-            if re.match(r'^\d*$', time_num):
+        elif isinstance(time_num, str): # 2021/09/24 11:20:29
+            if re.match(r'^\d{9,13}$', time_num):
                 time_begin = datetime.datetime(1970,1,1,8,0,0)
                 time = time_begin + datetime.timedelta(milliseconds=int(time_num))
                 return time
@@ -493,6 +493,9 @@ def formate_timestamp(time_num):
             elif re.match(r'\d{4}-\d{1,2}-\d{1,2}', time_num):
                 time_num = re.findall(r'\d{4}-\d{1,2}-\d{1,2}', time_num)[0]
                 return datetime.datetime.strptime(time_num, '%Y-%m-%d')
+            elif re.match(r'\d{4}/\d{2}/\d{2}', time_num):
+                time_num = re.findall(r'\d{4}/\d{2}/\d{2}', time_num)[0]
+                return datetime.datetime.strptime(time_num, '%Y/%m/%d')
             else:
                 logger.info(f'日期{time_num}的格式无法识别')
                 return None

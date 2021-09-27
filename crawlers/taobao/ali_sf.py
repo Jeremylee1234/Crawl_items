@@ -1,6 +1,6 @@
 from selenium.common.exceptions import TimeoutException
 from crawlers.taobao.verify import update_all_cookies
-from pipeline import process_item,upload_item
+from pipeline import *
 from utils.func_classes import Err_Retry
 from utils.create_driver import Driver
 from utils.config import global_config
@@ -269,19 +269,69 @@ class Parse_detail(object):
 				self.err_times += 1
 				return 0, item
 		else:
-			logger.info(SITE_ID,'放弃获取详情页',None,item.url)
-			self.err_times += 1
-			return 0, item
+			print(f'失败次数过多，放弃爬取{item.url}')
+			self.err_times = 0
+			return -1, item
 
-	def update_item(self, item:Item):
+	def update_item(self, item:db.Item):
 		if self.err_times <= 1:
 			response = self.session.get(url=item.url)
 			if response.status_code == 200:
 				try:
 					selector = etree.HTML(response.text)
-					item.status = 123
-				except:
-					pass
+					item.status = 2
+					item.current_price = utils.get_money(utils.outFirst(selector.xpath('//span[contains(@class,"current-price")]/em/text()')))
+					item.deal_time = utils.formate_timestamp(utils.outFirst(selector.xpath('//span[contains(@class,"J_TimeLeft")]/text()')))
+					item.deal_price = utils.get_money(utils.outFirst(selector.xpath('//span[contains(@class,"current-price")]/em/text()')))
+					item.people_signed = utils.get_int(utils.outFirst(selector.xpath('//div[@class="pm-remind"]/span[contains(@class,"pm-apply")]/em/text()')))
+					item.people_alarmed = utils.get_int(utils.outFirst(selector.xpath('//div[@class="pm-remind"]/span[contains(@class,"pm-reminder")]/em/text()')))
+					item.people_bid = utils.get_int(utils.outFirst(selector.xpath('//span[@class="J_Record"]/text()')))
+					item.people_viewed = utils.get_int(utils.outFirst(selector.xpath('//div[@class="pm-remind"]/span[contains(@class,"pm-surround")]/em/text()')))
+					if isinstance(item.people_bid, int) and item.people_bid > 0:
+						try:
+							bids_params = {
+								'currentPage': '1',
+								'callback': 'jsonp954',
+								'records_type': 'pageRecords',
+								'id': item.repeat
+							}
+							response = self.session.get('https://susong-item.taobao.com/json/get_bid_records.htm', params=bids_params)
+							bids = json.loads(utils.escape_jsonp(response.text, 'dict'))
+							item.bids = bids
+						except Exception as e:
+							print(e)
+
+						try:
+							confirm_params = {
+								'callback': 'jsonp738',
+								'itemId': item.repeat
+							}
+							response = self.session.get('https://sf.taobao.com/json/getSfDealConfirm.do', params=confirm_params)
+							confirm = json.loads(utils.escape_jsonp(response.text, 'dict'))
+							item.confirm = confirm
+						except Exception as e:
+							print(e)
+					if item.people_signed == None and item.people_signed == None and item.people_signed and item.people_signed == None:
+						# 判定当前页面请求失败,cookie错误次数+1
+						self.cookie_obj['err_times'] += 1
+						time.sleep(15)
+						return 0, item
+					else:
+						# 判定详情页请求成功,cookiejiji及类的错误次数归零
+						self.cookie_obj['err_times'] = 0
+						self.err_times = 0
+						return 1, item
+				except Exception as e:
+					print(e)
+					self.err_times += 1
+					return self.update_item(item)
+			else:
+				self.err_times += 1
+				return self.update_item(item)
+		else:
+			print(f'失败次数过多，放弃爬取{item.url}')
+			self.err_times = 0
+			return -1, item
 
 	def expand_items(self, items:list):
 		while len(items) > 0:
@@ -305,12 +355,61 @@ class Parse_detail(object):
 			
 			if self.err_times <= 4:
 				status_code, item = self.parse_detail(item)
-				if status_code == 0:
-					items.append(item)
-					continue
-				elif status_code == 1:
+				if status_code == 1:
+					self.err_times = 0
 					self.correct_count += 1
 					yield item
+				elif status_code == 0:
+					self.err_times += 1
+					items.append(item)
+					continue
+				elif status_code == -1:
+					continue
+				else:
+					print(f'status_code:{status_code}')
+					continue
+
+			else:
+				self.err_times = 0
+				logger.info(SITE_ID,'ali-sf的详情页最终放弃请求',None,item.url)
+				continue
+
+	def update_items(self, items:list):
+		while len(items) > 0:
+			item = items.pop()
+			if len(self.useful_cookies) <= 1:
+				update_all_cookies()
+				self.__init__()
+
+			if self.cookie_obj['err_times'] >= DISABLE_ACCOUNT_LEVEL:
+				self.useful_cookies.remove(self.cookie_obj)
+				db.disable_cookie(self.cookie_obj)
+				self.cookie_obj = random.choice(self.useful_cookies)
+				self.cookie = utils.format_sele_cookies(self.cookie_obj['cookie'].cookie, '.taobao.com')
+				self.session = utils.get_session(consts.sf_pc_detail_headers, self.cookie)
+
+			if self.correct_count >= CHANGE_ACCOUNT_LEVEL:
+				self.correct_count = 0
+				self.cookie_obj = random.choice(self.useful_cookies)
+				self.cookie = utils.format_sele_cookies(self.cookie_obj['cookie'].cookie, '.taobao.com')
+				self.session = utils.get_session(consts.sf_pc_detail_headers, self.cookie)
+			
+			if self.err_times <= 4:
+				status_code, item = self.update_item(item)
+				if status_code == 1:
+					self.err_times = 0
+					self.correct_count += 1
+					yield item
+				elif status_code == 0:
+					self.err_times += 1
+					items.append(item)
+					continue
+				elif status_code == -1:
+					continue
+				else:
+					print(f'status_code:{status_code}')
+					continue
+
 			else:
 				self.err_times = 0
 				logger.info(SITE_ID,'ali-sf的详情页最终放弃请求',None,item.url)
@@ -323,16 +422,21 @@ class Ali_sf(Err_Retry):
 	def _run_(self):
 		# all_province, all_city, all_county = db.get_citys()
 		# 新项目的爬取
+		parser = Parse_detail()
 		for province in consts.sf_province:
 			# os.system('taskkill /F /im chromedriver.exe')
 			# os.system('taskkill /F /im chrome.exe')
 			repeat_set = db.get_items_repeat(1, province[1])
 			get_urls = Get_urls(repeat_set)
 			for category in consts.sf_category:
-				parser = Parse_detail()
 				for page in range(1,category[1]+1): # 爬取每个种类指定页数的内容
 					driver = get_urls.access_page(province, category, page)
 					items = get_urls.parse_urls(province, category, driver)
 					for item in parser.expand_items(items):
 						item = process_item(item)
 						upload_item(item)
+
+		update_items = db.get_update_items()
+		for item in parser.update_items(update_items):
+			item = process_updated_item(item)
+			upload_updated_item(item)
