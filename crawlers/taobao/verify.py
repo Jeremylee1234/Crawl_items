@@ -6,6 +6,7 @@ import pyautogui
 import alchemy as db
 from utils import utils
 from threading import Lock
+from utils.logger import logger
 from utils.create_driver import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -166,7 +167,9 @@ class UpdateCookies(object):
             slider = pyautogui.locateOnScreen('./files/images/slider_world.png')
             if slider:
                 x, y = pyautogui.center(slider)
+                self.lock.acquire()
                 utils.slide_btn(x, y, 300, 0)
+                self.lock.release()
                 do_times += 1
             else:
                 continue
@@ -196,7 +199,9 @@ class UpdateCookies(object):
             login_coord = pyautogui.locateOnScreen('./files/images/world_login.png')
             if login_coord:
                 x, y = pyautogui.center(login_coord)
+                self.lock.acquire()
                 utils.click_btn(x, y)
+                self.lock.release()
                 do_times += 1
             else:
                 time.sleep(4.5)
@@ -206,92 +211,90 @@ class UpdateCookies(object):
     def login_world(self):
         if self.driver == None:
             return None
-        elif self.err_times <= 5:
-            # try:
-            if self.driver.current_url == 'https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login':
-                try:
-                    self.driver.maximize_window()
-                except Exception as e:
-                    print(e)
-                time.sleep(0.5)
-                login_frame = self.driver.find_elements_by_xpath('//iframe[@id="J_Member"]')
-                if len(login_frame) >= 1:
-                    login_frame = login_frame[0]
-                    self.driver.switch_to.frame(login_frame)
-        
-                    # try:
-                    input_username = WebDriverWait(self.driver, 15).until(
-                        EC.presence_of_element_located((By.ID, 'fm-login-id'))
-                    )
-                    input_password = WebDriverWait(self.driver, 15).until(
-                        EC.presence_of_element_located((By.ID, 'fm-login-password'))
-                    )
-                    time.sleep(2)
-                    input_username.clear()
-                    input_password.clear()
-
-                    for u in self.cookie.username:
-                        input_username.send_keys(u)
-                        time.sleep(random.randint(10,70)/1000)
-                    for p in self.cookie.password:
-                        input_password.send_keys(p)
-                        time.sleep(random.randint(10,70)/1000)
-                    self.driver.switch_to.default_content()
-                    time.sleep(2)
-                    self.click_world_login()
-                    self.slide_world_btn()
-                    
-                    check_times = 0
-                    while 'login' in self.driver.current_url:
-                        self.lock.acquire()
+        elif self.err_times <= 3:
+            try:
+                if self.driver.current_url == 'https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login':
+                    time.sleep(0.5)
+                    login_frame = self.driver.find_elements_by_xpath('//iframe[@id="J_Member"]')
+                    if len(login_frame) >= 1:
+                        login_frame = login_frame[0]
                         self.driver.switch_to.frame(login_frame)
-                        failed_info = self.driver.find_elements_by_xpath('//*[@id="baxia-dialog-content"]')
-                        if len(failed_info) >= 1 and failed_info[0].is_displayed():
-                            failed_info = failed_info[0]
-                            self.driver.switch_to.frame(failed_info)
-                            failed_info = self.driver.find_elements_by_xpath('//a[@id="nc_1_refresh1"]')
-                            if len(failed_info) >= 1 and failed_info[0].is_displayed():
-                                self.driver.switch_to.default_content()
-                                self.err_times += 1
-                                try:
-                                    self.driver.refresh()
-                                except TimeoutException:
-                                    self.driver.execute_script('window.stop()')
-                                time.sleep(5)
-                                self.lock.release()
-                                return self.login_world()
+            
+                        # try:
+                        input_username = WebDriverWait(self.driver, 15).until(
+                            EC.presence_of_element_located((By.ID, 'fm-login-id'))
+                        )
+                        input_password = WebDriverWait(self.driver, 15).until(
+                            EC.presence_of_element_located((By.ID, 'fm-login-password'))
+                        )
+                        time.sleep(0.5)
+                        input_username.clear()
+                        input_password.clear()
+
+                        for u in self.cookie.username:
+                            input_username.send_keys(u)
+                            time.sleep(random.randint(10,70)/1000)
+                        for p in self.cookie.password:
+                            input_password.send_keys(p)
+                            time.sleep(random.randint(10,70)/1000)
                         self.driver.switch_to.default_content()
-                        self.lock.release()
-                        check_times += 1
-                        time.sleep(3)
-                        if check_times >= 20:
-                            print('最大尝试次数,判断登陆失败')
-                            self.err_times += 10
-                            return self.login_world()
-                    time.sleep(2)
-                    WebDriverWait(self.driver, 15).until(
-                        EC.presence_of_element_located((By.ID, 'search-box'))
-                    )
-                    cookies = self.driver.get_cookies()
-                    self.driver.quit()
-                    return cookies
+                        time.sleep(0.7)
+                        self.click_world_login()
+                        self.slide_world_btn()
+                        
+                        check_times = 0
+                        while 'login' in self.driver.current_url:
+                            self.lock.acquire()
+                            self.driver.switch_to.frame(login_frame)
+                            failed_info = self.driver.find_elements_by_xpath('//*[@id="baxia-dialog-content"]')
+                            if len(failed_info) >= 1 and failed_info[0].is_displayed():
+                                failed_info = failed_info[0]
+                                self.driver.switch_to.frame(failed_info)
+                                failed_info = self.driver.find_elements_by_xpath('//a[@id="nc_1_refresh1"]')
+                                if len(failed_info) >= 1 and failed_info[0].is_displayed():
+                                    self.driver.switch_to.default_content()
+                                    self.err_times += 2
+                                    try:
+                                        self.driver.refresh()
+                                    except TimeoutException:
+                                        self.driver.execute_script('window.stop()')
+                                    time.sleep(5)
+                                    self.lock.release()
+                                    return self.login_world()
+                            self.driver.switch_to.default_content()
+                            self.lock.release()
+                            check_times += 1
+                            time.sleep(3)
+                            if check_times >= 20:
+                                print('最大尝试次数,判断登陆失败')
+                                self.err_times += 2
+                                return self.login_world()
+                        time.sleep(2)
+                        WebDriverWait(self.driver, 15).until(
+                            EC.presence_of_element_located((By.ID, 'search-box'))
+                        )
+                        cookies = self.driver.get_cookies()
+                        self.driver.quit()
+                        return cookies
+                    else:
+                        self.driver.get('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login')
+                        time.sleep(2)
+                        self.err_times += 2
+                        return self.login_world()
                 else:
                     self.driver.get('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login')
-                    time.sleep(2)
+                    time.sleep(1)
                     self.err_times += 2
                     return self.login_world()
-
-            else:
+            except Exception as e:
+                logger.info(1,'verify1重试',e,self.cookie.username)
                 self.driver.get('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login')
-                time.sleep(2)
+                time.sleep(1)
                 self.err_times += 2
                 return self.login_world()
-            # except Exception as e:
-            #     print(e)
-            #     self.err_times += 2
-            #     return self.login_world()
         else:
-            print('failed!!!')
+            logger.error(1,'verify1放弃',None,self.cookie.username)
+            self.driver.quit()
             return None
 
     def update_cookie(self, cookies):
@@ -313,7 +316,7 @@ def update_all_cookies():
             login.update_cookie(cookie)
             del login
         except Exception as e:
-            print(f'更新cookie时出错:{e}')
+            logger.error(1,'更新cookie时错误',e,cookie['cookie'].username)
             continue
     os.system('taskkill /F /im chromedriver.exe')
     os.system('taskkill /F /im chrome.exe')

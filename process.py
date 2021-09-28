@@ -3,8 +3,9 @@ import random
 import requests
 import datetime
 from utils import utils
+import alchemy as db
 from utils.consts import industry_a,industry_b,industry_c
-from data_formate import Item
+from data_formate import Item,Bid,Purchaser
 
 BAIDU_KEY = 'fQRhL0wpemGpGGKIkUMUhGqXfe96wOmM'
 USER_AGENTS = [
@@ -20,6 +21,37 @@ USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux i686; U;) Gecko/20070322 Kazehakase/0.4.5"
 ]
 
+def formate_bids(item:Item):
+    """
+    整理item.bids的数据格式
+    """
+    results = []
+    if isinstance(item.bids, dict) and isinstance(item.bids.get('records'), list):
+        bids = item.bids.get('records')
+        for bid in bids:
+            new_bid = Bid()
+            new_bid.code = bid.get('alias')
+            new_bid.price = utils.get_money(bid.get('price'))
+            new_bid.bid_time = utils.formate_timestamp(bid.get('date'))
+            results.append(new_bid)
+    return results
+
+def formate_purchaser(item:Item):
+    result = Purchaser()
+    if isinstance(item.purchaser, dict) and isinstance(item.purchaser.get('purchaseConfirm'), dict):
+        confirm = item.purchaser.get('purchaseConfirm')
+        result.name = confirm.get('buyerName')
+        result.code = confirm.get('buyerAliasName')
+        result.deal_time = utils.getNotNone(confirm.get('lastTime'), confirm.get('auctionEndTime'))
+        result.price = confirm.get('priceCent')
+        result.title = confirm.get('auctionTitle')
+    return result
+
+def get_code(item:Item):
+    if not isinstance(item.updated_time, datetime.datetime):
+        item.updated_time = datetime.datetime.now()   
+    return datetime.datetime.strftime(datetime.datetime.now(), '%Y%m%d%H%M%S')
+
 def get_discount(item:Item):
     """
     计算折扣率,作为item.discount
@@ -34,7 +66,21 @@ def get_discount(item:Item):
     else:
         return 100
 
-def get_edu(item:Item):
+def get_updated_discount(item:db.Item):
+    """
+    计算更新后的折扣率
+    """
+    sell_price = utils.get_num(item.deal_price, item.max_price, item.current_price, item.starting_price, item.appraisal_price)
+    base_price = utils.get_num(item.appraisal_price, item.starting_price, item.current_price, item.max_price, item.deal_price)
+    if isinstance(sell_price, (int, float)) and isinstance(base_price, (int, float)):
+        result = round(100 * sell_price / base_price,2)
+        if result < 0:
+            result = 0
+        return result
+    else:
+        return 100
+
+def get_school(item:Item):
     """
     获取教育学校字段
     """
@@ -55,6 +101,15 @@ def get_envir(item:Item):
             return '其他'
     else:
         return '环境配套超市医院健身娱乐银行等全面信息详见电脑版网站地图地理信息'
+
+def get_contactor(item:Item):
+    return '资产信息网'
+
+def get_traffic(item:Item):
+    return '交通全面信息详见电脑版网站地图地理信息'
+
+def get_contact_phone(item:Item):
+    return '021-68828928'
 
 def get_coordinate(item:Item):
     """
@@ -129,7 +184,7 @@ def getAppraised(addr, area):
     response = requests.post(url,headers=headers,data=data)
     return json.loads(response.text)
 
-def getReport(item:Item):
+def get_report(item:Item):
     """
     请求贝壳api判断项目是否可获取价值报告
     """
@@ -139,7 +194,7 @@ def getReport(item:Item):
             area = 100
         if not item.location:
             return False
-        response = getAppraised(item.city, item.location, area)
+        response = getAppraised(item.location, area)
         if response.get('data'):
             return True
         else:

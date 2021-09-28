@@ -34,7 +34,6 @@ class Item(object):
 		self.location = None # 项目地址,str
 		self.area = None # 房地产类的资产面积,股权债权类的单位为万元的保证金,float
 		self.intro = '' # 项目说明,str
-		self.other_info = None # 其他项目说明,str
 		self.attaches = '[]' # 项目附件,为单引号列表转字符串,str
 		self.seller = None # 买方,str
 		self.privileged_people = None # 优先购买权人,str
@@ -44,7 +43,6 @@ class Item(object):
 		self.people_contacter = None # 联系人,str
 		self.phone = None # 联系电话,str
 		self.telephone = None # 联系电话2,str
-		self.auction_people = '[]' # 参拍人员信息,为单引号列表转字符串,str
 		self.lng = None # 经度,float
 		self.lat = None # 纬度,float
 		self.discount = None # 网站折扣率字段
@@ -63,7 +61,7 @@ class Item(object):
 		self.extra4 = None # 预留位4,str
 		self.extra5 = None # 预留位5,str
 		self.siteId = site_id # 站点id,必需字段,int
-		self.crawled_time = 1 # 已爬取次数
+		self.crawled_times = 1 # 已爬取次数
 		self.categoryId = None # 种类id,外键,为category表中id值,int
 		self.provinceId = None # 省份id,外键,为province表中id值,int
 		self.cityId = None # 城市id,外键,为city表中id值,int
@@ -72,27 +70,30 @@ class Item(object):
 		self.industryId_b = None # 二级行业id,int
 		self.industryId_c = None # 三级行业id,int
 
-		self.bids = [] # 存储全部出价记录,需要后续处理
+		self.bids = {} # 存储全部出价记录,需要后续处理
+		self.purchaser = {} # 存储全部竞价确认书信息,需要后续处理
 		
 class Purchaser(object):
 	"""
 	项目最后成功竞拍竞拍人信息
 	"""
-	def __init__(self, itemid, name=None, price=None, confirm_pact=None):
-		name = name # 姓名,str
-		price = price # 成交价格,str
-		confirm_pact = confirm_pact # 竞拍确认书内容
-		itemId = itemid # 对应项目id
+	def __init__(self):
+		self.name = None # 姓名,str
+		self.title = None # 项目标题
+		self.code = None # 出价编号
+		self.price = None # 成交价格,str
+		self.deal_time = None # 成交时间
+		self.itemId = None # 对应项目id
 
 class Bid(object):
 	"""
 	竞拍记录内容
 	"""
-	def __init__(self, itemid, code=None, price=None, bid_time=None):
-		code = code # 竞拍编号
-		price = price # 竞拍出价
-		bid_time = bid_time # 竞拍时间
-		itemId = itemid # 对应项目id
+	def __init__(self):
+		self.code = None # 竞拍编号
+		self.price = None # 竞拍出价
+		self.bid_time = None # 竞拍时间
+		self.itemId = None # 对应项目id
 
 class Crawl_Log(object):
 	def __init__(self, siteid, job=None, info=None, exception=None, err_level=0):

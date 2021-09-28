@@ -81,7 +81,6 @@ class Items(Base):
 	location = Column(String(255),nullable=True,comment="项目地址")
 	area = Column(Float,nullable=True,comment="面积")
 	intro = Column(Text,nullable=True,comment="项目介绍")
-	other_info = Column(Text,nullable=True,comment="其他项目信息")
 	attaches = Column(Text,nullable=True,comment="附件")
 	seller = Column(String(255),nullable=True,comment="出售方")
 	privileged_people = Column(String(255),nullable=True,comment="优先购买权人")
@@ -91,7 +90,6 @@ class Items(Base):
 	people_contacter = Column(String(255),nullable=True,comment="出让方")
 	phone = Column(String(255),nullable=True,comment="联系电话")
 	telephone = Column(String(255),nullable=True,comment="联系电话2")
-	auction_people = Column(Text,nullable=True,comment="已出价人")
 
 	lng = Column(Float,nullable=True,comment="经度")
 	lat = Column(Float,nullable=True,comment="纬度")
@@ -287,8 +285,10 @@ class Purchaser(Base):
 	}
 	id = Column(Integer,primary_key=True,autoincrement=True,comment="主键id")
 	name = Column(String(32),nullable=True,comment="竞拍人姓名")
+	title = Column(String(255),nullable=True,comment="项目标题")
+	code = Column(String(8),nullable=True,comment="出价编号")
 	price = Column(Float,nullable=True,comment="最终成交价")
-	confirm_pact = Column(Text,nullable=True,comment="竞拍确认书")
+	deal_time = Column(TIMESTAMP,nullable=True,comment="成交时间")
 
 	itemId = Column(BigInteger,ForeignKey('item.id'),nullable=False,comment='项目主键')
 

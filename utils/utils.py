@@ -9,6 +9,7 @@ from retrying import retry
 from threading import Thread
 from data_formate import Item
 from lxml.etree import _Element
+from utils.consts import USER_AGENTS
 from utils.config import global_config
 from utils.logger import logger
 
@@ -117,6 +118,10 @@ def click_btn(x, y, accurate=False):
     time.sleep(random_seconds(0,0.5))
     pyautogui.click()
 
+def process_headers(headers:dict):
+    headers['user-agent'] = random.choice(USER_AGENTS)
+    return headers
+
 ## 各种内容处理函数
 
 def get_id():
@@ -149,15 +154,16 @@ def escape_jsonp(string:str, type='dict'):
     """
     if isinstance(string, str):
         if type == 'dict':
-            pattern = re.compile(r'{[\s\S]*?}')
+            pattern = re.compile(r'{[\s\S]*}')
         elif type == 'list':
-            pattern = re.compile(r'\[[\s\S]*?\]')
+            pattern = re.compile(r'\[[\s\S]*\]')
         else:
             print('type错误')
             return None
-        strings = re.findall(pattern, string)
-        if len(strings) >= 1:
-            return strings[0]
+        string = re.search(pattern, clean(string))
+        if string:
+            data = string.group()
+            return string.group()
         else:
             return None
     else:
@@ -409,7 +415,7 @@ def format_cookies(cookie):
     cookiesJar = requests.utils.cookiejar_from_dict(manual_cookies, cookiejar=None, overwrite=True)
     return cookiesJar
 
-def format_sele_cookies(sele_cookie, domain):
+def format_sele_cookies(sele_cookie, domain=None):
     """
     将selenium格式cookie解析为session格式cookie
     """
@@ -417,15 +423,23 @@ def format_sele_cookies(sele_cookie, domain):
     cookies = json.loads(sele_cookie)
     for cookie in cookies:
         try:
-            if cookie.get('domain') == domain: # 需判断究竟是否需要限定domain
+            if domain:
+                if cookie.get('domain') == domain:
+                    name = cookie.get('name')
+                    value = cookie.get('value')
+                    if name and value:
+                        manual_cookies[name] = value
+                    else:
+                        continue
+                else:
+                    continue
+            else:
                 name = cookie.get('name')
                 value = cookie.get('value')
                 if name and value:
                     manual_cookies[name] = value
                 else:
                     continue
-            else:
-                continue
         except Exception as e:
             logger.ingo(f'尝试解析selenium的cookie时出错:{e}')
             continue
@@ -458,10 +472,10 @@ def get_status(datas:list):
     if isinstance(datas, list):
         for index,data in enumerate(datas):
             if data.is_displayed():
-                return index
-        return 5
+                return str(index)
+        return '5'
     else:
-        return 5
+        return '5'
 
 def parse_coordinate(string:str):
     if isinstance(string, str):
@@ -477,33 +491,49 @@ def parse_coordinate(string:str):
         return None, None
 
 def formate_timestamp(time_num):
-    try:
-        if isinstance(time_num, int):
+    # try:
+    if isinstance(time_num, int):
+        time_begin = datetime.datetime(1970,1,1,8,0,0)
+        time = time_begin + datetime.timedelta(milliseconds=time_num)
+        return time
+    elif isinstance(time_num, str): # 2021/09/24 11:20:29
+        if re.match(r'^\d{12,13}$', time_num):
             time_begin = datetime.datetime(1970,1,1,8,0,0)
-            time = time_begin + datetime.timedelta(milliseconds=time_num)
+            time = time_begin + datetime.timedelta(milliseconds=int(time_num))
             return time
-        elif isinstance(time_num, str): # 2021/09/24 11:20:29
-            if re.match(r'^\d{9,13}$', time_num):
-                time_begin = datetime.datetime(1970,1,1,8,0,0)
-                time = time_begin + datetime.timedelta(milliseconds=int(time_num))
-                return time
-            elif re.match(r'\d{4}年\d{1,2}月\d{1,2}', time_num):
-                time_num = re.findall(r'\d{4}年\d{1,2}月\d{1,2}', time_num)[0]
-                return datetime.datetime.strptime(time_num, '%Y年%m月%d')
-            elif re.match(r'\d{4}-\d{1,2}-\d{1,2}', time_num):
-                time_num = re.findall(r'\d{4}-\d{1,2}-\d{1,2}', time_num)[0]
-                return datetime.datetime.strptime(time_num, '%Y-%m-%d')
-            elif re.match(r'\d{4}/\d{2}/\d{2}', time_num):
-                time_num = re.findall(r'\d{4}/\d{2}/\d{2}', time_num)[0]
-                return datetime.datetime.strptime(time_num, '%Y/%m/%d')
-            else:
-                logger.info(f'日期{time_num}的格式无法识别')
-                return None
+        elif re.match(r'^\d{9,10}$', time_num):
+            time_begin = datetime.datetime(1970,1,1,8,0,0)
+            time = time_begin + datetime.timedelta(seconds=int(time_num))
+            return time
+        elif re.match(r'\d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2}:\d{2}', time_num):
+            time_num = re.search(r'\d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2}:\d{2}', time_num).group()
+            return datetime.datetime.strptime(time_num, '%Y年%m月%d日 %H:%M:%S')
+        elif re.match(r'\d{4}年\d{1,2}月\d{1,2} \d{2}:\d{2}:\d{2}', time_num):
+            time_num = re.search(r'\d{4}年\d{1,2}月\d{1,2} \d{2}:\d{2}:\d{2}', time_num).group()
+            return datetime.datetime.strptime(time_num, '%Y年%m月%d %H:%M:%S')
+        elif re.match(r'\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}', time_num):
+            time_num = re.search(r'\d{4}-\d{1,2}-\d{1,2} \d{2}:\d{2}:\d{2}', time_num).group()
+            return datetime.datetime.strptime(time_num, '%Y-%m-%d %H:%M:%S')
+        elif re.match(r'\d{4}\/\d{1,2}\/\d{1,2} \d{2}:\d{2}:\d{2}', time_num):
+            time_num = re.search(r'\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}', time_num).group()
+            return datetime.datetime.strptime(time_num, '%Y/%m/%d %H:%M:%S')
+        elif re.match(r'\d{4}年\d{1,2}月\d{1,2}', time_num):
+            time_num = re.search(r'\d{4}年\d{1,2}月\d{1,2}', time_num).group()
+            return datetime.datetime.strptime(time_num, '%Y年%m月%d')
+        elif re.match(r'\d{4}-\d{1,2}-\d{1,2}', time_num):
+            time_num = re.search(r'\d{4}-\d{1,2}-\d{1,2}', time_num).group()
+            return datetime.datetime.strptime(time_num, '%Y-%m-%d')
+        elif re.match(r'\d{4}\/\d{1,2}\/\d{1,2}', time_num):
+            time_num = re.search(r'\d{4}/\d{2}/\d{2}', time_num).group()
+            return datetime.datetime.strptime(time_num, '%Y/%m/%d')
         else:
+            logger.info(f'日期{time_num}的格式无法识别')
             return None
-    except Exception as e:
-        logger.error(f'日期{time_num}处理时出错:{e}')
+    else:
         return None
+    # except Exception as e:
+    #     logger.error(f'日期{time_num}处理时出错:{e}')
+    #     return None
 
 ## 二次解析item内容
 

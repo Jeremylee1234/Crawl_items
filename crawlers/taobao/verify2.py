@@ -22,7 +22,36 @@ class UpdateCookies(object):
 
     @utils.my_async
     def slide_code_btn(self):
-        pass
+        watch_time = 0
+        do_times = 0
+        while True:
+            watch_time += 1
+            try:
+                WebDriverWait(self.driver, 0.2).until(
+                    EC.presence_of_element_located((By.ID, 'login-form'))
+                )
+                if watch_time >= 30:
+                    self.driver.quit()
+                    return 
+                if do_times >= 3:
+                    self.driver.quit()
+                    return 
+                if 'login' not in self.driver.current_url:
+                    return 
+                slider = pyautogui.locateOnScreen('./files/images/slider_pc_taobao.png')
+                if slider:
+                    x, y = pyautogui.center(slider)
+                    self.lock.acquire()
+                    utils.slide_btn(x, y, 300, 0)
+                    self.lock.release()
+                    do_times += 1
+                else:
+                    time.sleep(3)
+                    continue
+            except Exception as e:
+                watch_time += 1
+                print(e)
+                return 
 
     @utils.my_async
     def click_taobao_login(self):
@@ -101,7 +130,7 @@ class UpdateCookies(object):
                         err_info = self.driver.find_elements_by_xpath('//iframe[@id="baxia-dialog-content"]')
                         if len(err_info) >= 1:
                             self.driver.switch_to.frame(err_info[0])
-                            err_info = self.driver.find_elements_by_xpath('//div[@id="nocaptcha"]//a[@contians(id,"refresh")]')
+                            err_info = self.driver.find_elements_by_xpath('//div[@id="nocaptcha"]//a[@contains(id,"refresh")]')
                             if len(err_info) >= 1:
                                 err_info = err_info[0]
                                 err_info.click()
@@ -146,7 +175,7 @@ def update_all_cookies():
     all_cookies = db.get_cookies(siteId=1, useful=False, phone=True)
     for cookie in all_cookies:
         try:
-            driver = Driver('https://world.taobao.com/wow/z/oversea/SEO-SEM/ovs-pc-login').create_driver(need_proxy=False,ua='pc')
+            driver = Driver('https://login.taobao.com/member/login.jhtml').create_driver(need_proxy=False,ua='pc')
             login = UpdateCookies(driver, cookie)
             cookies = login.login_by_code()
             login.update_cookie(cookies)

@@ -20,6 +20,39 @@
 * 图片考虑重新命名与截取
 * utils.utils.formate_timestamp添加精确到分钟的转换
 * update_item和parse_detail的bids及confirm需要再次处理
+* 滑块、点击时是否需要加锁
+* 缺失参数:
+  * 
+  * start_time
+  * end_time
+  * delay_period
+  * bidding_period
+  * court_contacter
+  * max_price
+  * people_alarmed
+  * privileged_people
+  * deal_price
+  * margin
+  * markup
+  * 
+  * status二次处理
+  * category二次处理
+  * location二次处理
+  * start_time二次提取
+  * industry
+  * end_time二次提取
+  * 价格二次提取
+  * discount
+  * area
+  * city
+  * cityId
+  * county
+  * countyId
+  * 
+  * traffic
+  * report
+  * school
+  * envir
 
 # 验证登陆：
 1. 接管手机短信，验证码登陆网页移动端
